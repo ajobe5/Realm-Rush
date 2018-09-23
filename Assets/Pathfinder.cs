@@ -6,6 +6,9 @@ using UnityEngine;
 public class Pathfinder : MonoBehaviour {
 
     [SerializeField] Waypoint startWaypoint, endWaypoint;
+    Queue<Waypoint> queue = new Queue<Waypoint>();
+    bool isRunning = true;
+    Waypoint searchCenter;
 
     Dictionary<Vector2Int, Waypoint> grid = new Dictionary<Vector2Int, Waypoint>();
     Vector2Int[] directions =
@@ -20,21 +23,61 @@ public class Pathfinder : MonoBehaviour {
 	void Start () {
         LoadBlocks();
         ColorStartAndEnd();
-        ExploreNeighbors();
+        Pathfind();
+        //ExploreNeighbors();
 	}
+
+    private void Pathfind()
+    {
+        queue.Enqueue(startWaypoint);
+
+        while(queue.Count > 0 && isRunning)
+        {
+            searchCenter = queue.Dequeue();
+            HaltIfEndFound();
+            ExploreNeighbors();
+            searchCenter.isExplored = true;
+        }
+    }
+
+    private void HaltIfEndFound()
+    {
+        if(searchCenter == endWaypoint)
+        {
+            print("End found");
+            isRunning = false;
+        }
+    }
 
     private void ExploreNeighbors()
     {
+        if (!isRunning) { return; }
+
         foreach(Vector2Int direction in directions)
         {
-            Vector2Int explorationCoordinates = startWaypoint.GetGridPos() + direction;
-            try {
-                grid[explorationCoordinates].SetTopColor(Color.blue);
+            Vector2Int neighborCoordinates = searchCenter.GetGridPos() + direction;
+            try
+            {
+                QueueNewNeighbors(neighborCoordinates);
             }
             catch
             {
                 
             }
+        }
+    }
+
+    private void QueueNewNeighbors(Vector2Int neighborCoordinates)
+    {
+        Waypoint neighbor = grid[neighborCoordinates];
+        if (neighbor.isExplored || queue.Contains(neighbor))
+        {
+            return;
+        }
+        else
+        {
+            queue.Enqueue(neighbor);
+            neighbor.exploredFrom = searchCenter;
         }
     }
 
