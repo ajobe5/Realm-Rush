@@ -6,11 +6,13 @@ using UnityEngine;
 public class Pathfinder : MonoBehaviour {
 
     [SerializeField] Waypoint startWaypoint, endWaypoint;
+
+    Dictionary<Vector2Int, Waypoint> grid = new Dictionary<Vector2Int, Waypoint>();
     Queue<Waypoint> queue = new Queue<Waypoint>();
     bool isRunning = true;
     Waypoint searchCenter;
+    List<Waypoint> path = new List<Waypoint>();
 
-    Dictionary<Vector2Int, Waypoint> grid = new Dictionary<Vector2Int, Waypoint>();
     Vector2Int[] directions =
     {
         Vector2Int.up,
@@ -19,15 +21,31 @@ public class Pathfinder : MonoBehaviour {
         Vector2Int.left
     };
 
-	// Use this for initialization
-	void Start () {
+    public List<Waypoint> GetPath()
+    {
         LoadBlocks();
         ColorStartAndEnd();
-        Pathfind();
-        //ExploreNeighbors();
-	}
+        BreadthFirstSearch();
+        CreatePath();
+        return path;
+    }
 
-    private void Pathfind()
+    private void CreatePath()
+    {
+        path.Add(endWaypoint);
+        Waypoint previous = endWaypoint.exploredFrom;
+
+        while(previous != startWaypoint)
+        {
+            path.Add(previous);
+            previous = previous.exploredFrom;
+        }
+
+        path.Add(startWaypoint);
+        path.Reverse();
+    }
+
+    private void BreadthFirstSearch()
     {
         queue.Enqueue(startWaypoint);
 
@@ -56,13 +74,9 @@ public class Pathfinder : MonoBehaviour {
         foreach(Vector2Int direction in directions)
         {
             Vector2Int neighborCoordinates = searchCenter.GetGridPos() + direction;
-            try
+            if(grid.ContainsKey(neighborCoordinates))
             {
                 QueueNewNeighbors(neighborCoordinates);
-            }
-            catch
-            {
-                
             }
         }
     }
@@ -104,9 +118,4 @@ public class Pathfinder : MonoBehaviour {
         }
         print("Loaded " + grid.Count + " blocks");
     }
-
-    // Update is called once per frame
-    void Update () {
-		
-	}
 }
